@@ -500,7 +500,6 @@
       const text = buildResultText();
 
       // 1. Попытка отправить через нативный Telegram WebApp API
-      let sentViaTg = false;
       if (tg) {
         try {
           const payload = {
@@ -510,22 +509,19 @@
             text: text
           };
           tg.sendData(JSON.stringify(payload));
-          sentViaTg = true;
         } catch (err) {
-          console.warn("tg.sendData fallback:", err);
+          console.warn("tg.sendData:", err);
         }
       }
 
-      // 2. Если открыто не через ReplyKeyboard или в браузере — отправляем через URL схему
-      if (!sentViaTg) {
-        const username = (config.telegramUsername || '').replace('@', '').trim();
-        let shareUrl = '';
-        if (username) {
-          shareUrl = `https://t.me/${username}?text=${encodeURIComponent(text)}`;
-        } else {
-          shareUrl = `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(text)}`;
-        }
-        window.open(shareUrl, '_blank');
+      // 2. Открываем прямой диалог с заказчиком в Telegram
+      const username = (config.telegramUsername || 'gahrfb').replace('@', '').trim();
+      const directUrl = `https://t.me/${username}?text=${encodeURIComponent(text)}`;
+
+      if (tg?.openTelegramLink) {
+        tg.openTelegramLink(directUrl);
+      } else {
+        window.open(directUrl, '_blank');
       }
 
       sentFeedback?.classList.remove('hidden');

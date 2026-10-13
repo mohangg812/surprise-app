@@ -67,5 +67,5 @@ window.APP_CONFIG = {
   mosaicSubtext: "по {count} раз думаю о тебе каждый день {name})", // {count} и {name} подставятся сами
 
   // Настройки Telegram
-  telegramUsername: "", // Ваш @username в Telegram (без @), чтобы она могла отправить результат в 1 клик
+  telegramUsername: "gahrfb", // @username заказчика в Telegram для получения ответа
 };

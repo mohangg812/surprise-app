@@ -135,8 +135,8 @@
   }
 
   /**
-   * Рисует красивый градиентный силуэт девушки на Canvas,
-   * если внешний файл изображения недоступен.
+   * Рисует красивый, полноразмерный женский портрет с локонами и плечами,
+   * заполняющий всё пространство Canvas.
    */
   function createFallbackSilhouetteCanvas(width, height) {
     const offCanvas = document.createElement('canvas');
@@ -144,87 +144,106 @@
     offCanvas.height = height;
     const ctx = offCanvas.getContext('2d');
 
-    // Романтический бархатный фон
+    // Тёмный бархатный фон
     const bgGrad = ctx.createRadialGradient(
-      width * 0.5, height * 0.45, 20,
-      width * 0.5, height * 0.5, width * 0.75
+      width * 0.5, height * 0.42, 30,
+      width * 0.5, height * 0.5, width * 0.8
     );
-    bgGrad.addColorStop(0, '#1c0d29');
-    bgGrad.addColorStop(0.6, '#100619');
-    bgGrad.addColorStop(1, '#07020b');
+    bgGrad.addColorStop(0, '#1d0c26');
+    bgGrad.addColorStop(0.65, '#0e0413');
+    bgGrad.addColorStop(1, '#050108');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, width, height);
 
-    // Мягкое контурное сияние сзади
+    // Мягкий романтический ореол за головой
     const halo = ctx.createRadialGradient(
-      width * 0.45, height * 0.38, 40,
-      width * 0.45, height * 0.38, width * 0.5
+      width * 0.5, height * 0.38, 40,
+      width * 0.5, height * 0.38, width * 0.45
     );
-    halo.addColorStop(0, 'rgba(255, 117, 140, 0.45)');
-    halo.addColorStop(0.5, 'rgba(255, 195, 113, 0.2)');
+    halo.addColorStop(0, 'rgba(255, 117, 140, 0.55)');
+    halo.addColorStop(0.5, 'rgba(255, 195, 113, 0.28)');
     halo.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = halo;
     ctx.fillRect(0, 0, width, height);
 
-    // Градиент для силуэта девушки
-    const silGrad = ctx.createLinearGradient(width * 0.3, height * 0.15, width * 0.7, height * 0.85);
-    silGrad.addColorStop(0, '#ff9a9e');
-    silGrad.addColorStop(0.3, '#fecfef');
-    silGrad.addColorStop(0.65, '#ffc371');
-    silGrad.addColorStop(1, '#ff758c');
-    ctx.fillStyle = silGrad;
+    // 1. Плечи и тело внизу (заполняют нижнюю часть холста)
+    const bodyGrad = ctx.createLinearGradient(0, height * 0.6, 0, height);
+    bodyGrad.addColorStop(0, '#ff758c');
+    bodyGrad.addColorStop(0.4, '#d6336c');
+    bodyGrad.addColorStop(1, '#8c1d40');
+    ctx.fillStyle = bodyGrad;
 
-    // Векторный контур женского профиля и локонов волос
-    ctx.save();
     ctx.beginPath();
-    
-    // Начало от плеч слева
-    ctx.moveTo(width * 0.15, height * 0.95);
-    
-    // Линия спины и причёски
-    ctx.bezierCurveTo(width * 0.18, height * 0.75, width * 0.22, height * 0.55, width * 0.28, height * 0.38);
-    ctx.bezierCurveTo(width * 0.25, height * 0.25, width * 0.32, height * 0.15, width * 0.46, height * 0.14);
-    
-    // Макушка и лоб
-    ctx.bezierCurveTo(width * 0.58, height * 0.14, width * 0.64, height * 0.20, width * 0.65, height * 0.27);
-    
-    // Профиль лица: лоб, переносица, изящный носик
-    ctx.bezierCurveTo(width * 0.66, height * 0.31, width * 0.68, height * 0.34, width * 0.70, height * 0.36);
-    ctx.lineTo(width * 0.67, height * 0.38);
-    
-    // Губы
-    ctx.bezierCurveTo(width * 0.68, height * 0.40, width * 0.68, height * 0.42, width * 0.66, height * 0.44);
-    
-    // Подбородок и изящная шея
-    ctx.bezierCurveTo(width * 0.65, height * 0.47, width * 0.62, height * 0.50, width * 0.58, height * 0.53);
-    ctx.bezierCurveTo(width * 0.57, height * 0.60, width * 0.59, height * 0.68, width * 0.68, height * 0.75);
-    
-    // Плечо справа
-    ctx.bezierCurveTo(width * 0.76, height * 0.82, width * 0.85, height * 0.90, width * 0.88, height * 0.95);
-    ctx.lineTo(width * 0.15, height * 0.95);
+    ctx.moveTo(0, height);
+    ctx.lineTo(0, height * 0.82);
+    ctx.bezierCurveTo(width * 0.15, height * 0.76, width * 0.3, height * 0.66, width * 0.4, height * 0.62);
+    ctx.lineTo(width * 0.6, height * 0.62);
+    ctx.bezierCurveTo(width * 0.7, height * 0.66, width * 0.85, height * 0.76, width, height * 0.82);
+    ctx.lineTo(width, height);
     ctx.closePath();
     ctx.fill();
 
-    // Дополнительные мягкие локоны для пышности волос
+    // 2. Изящная шея
     ctx.beginPath();
-    ctx.arc(width * 0.38, height * 0.36, width * 0.22, 0, Math.PI * 2);
-    ctx.fillStyle = silGrad;
+    ctx.moveTo(width * 0.42, height * 0.62);
+    ctx.lineTo(width * 0.42, height * 0.48);
+    ctx.bezierCurveTo(width * 0.45, height * 0.52, width * 0.55, height * 0.52, width * 0.58, height * 0.48);
+    ctx.lineTo(width * 0.58, height * 0.62);
+    ctx.closePath();
+    ctx.fillStyle = '#ff9a9e';
     ctx.fill();
 
-    // Блик на скуле и щеке
-    const cheekGlow = ctx.createRadialGradient(
-      width * 0.52, height * 0.38, 5,
-      width * 0.52, height * 0.38, width * 0.18
+    // 3. Пышные локоны волос (обрамляют лицо)
+    const hairGrad = ctx.createLinearGradient(0, height * 0.1, 0, height * 0.75);
+    hairGrad.addColorStop(0, '#ff758c');
+    hairGrad.addColorStop(0.5, '#ffb199');
+    hairGrad.addColorStop(1, '#d6336c');
+    ctx.fillStyle = hairGrad;
+
+    // Волосы слева
+    ctx.beginPath();
+    ctx.ellipse(width * 0.35, height * 0.38, width * 0.22, height * 0.28, -0.15, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Волосы справа
+    ctx.beginPath();
+    ctx.ellipse(width * 0.65, height * 0.38, width * 0.22, height * 0.28, 0.15, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Макушка и объём сверху
+    ctx.beginPath();
+    ctx.ellipse(width * 0.5, height * 0.26, width * 0.30, height * 0.20, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 4. Овал лица (светящаяся нежная кожа)
+    const faceGrad = ctx.createRadialGradient(
+      width * 0.5, height * 0.36, 10,
+      width * 0.5, height * 0.36, width * 0.24
     );
-    cheekGlow.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
-    cheekGlow.addColorStop(0.4, 'rgba(255, 200, 180, 0.3)');
-    cheekGlow.addColorStop(1, 'rgba(255, 117, 140, 0)');
-    ctx.fillStyle = cheekGlow;
+    faceGrad.addColorStop(0, '#ffffff');
+    faceGrad.addColorStop(0.4, '#fff0f3');
+    faceGrad.addColorStop(0.75, '#ffc371');
+    faceGrad.addColorStop(1, '#ff8099');
+    ctx.fillStyle = faceGrad;
+
     ctx.beginPath();
-    ctx.arc(width * 0.52, height * 0.38, width * 0.18, 0, Math.PI * 2);
+    ctx.ellipse(width * 0.5, height * 0.36, width * 0.20, height * 0.22, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.restore();
+    // 5. Блик и акценты на чертах лица (глаза, улыбка)
+    ctx.fillStyle = '#ffffff';
+    // Блик на щеках и улыбке
+    ctx.beginPath();
+    ctx.ellipse(width * 0.45, height * 0.38, 12, 8, -0.2, 0, Math.PI * 2);
+    ctx.ellipse(width * 0.55, height * 0.38, 12, 8, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Улыбка и сияние губ
+    ctx.beginPath();
+    ctx.ellipse(width * 0.5, height * 0.44, 18, 7, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#ff4d6d';
+    ctx.fill();
+
     return offCanvas;
   }
 
@@ -257,8 +276,8 @@
     const imgData = offCtx.getImageData(0, 0, width, height);
     const data = imgData.data;
 
-    // Шаг сетки: ~7..8px для идеальной плотности ~1400-1800 букв
-    const step = Math.max(6, Math.min(10, Math.round(width / 52)));
+    // Шаг сетки: ~5.5-6px для заполнения всего портрета (~1300-1600 букв)
+    const step = Math.max(5, Math.min(7, Math.round(width / 68)));
     const cleanWord = (word && word.trim().length > 0) ? word.trim().toUpperCase() : 'ДАША';
 
     const rawPoints = [];
@@ -292,8 +311,8 @@
         // Яркость по стандарту ITU-R BT.601
         const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 
-        // Порог отсечения глубокого тёмного фона
-        if (lum > 0.12) {
+        // Порог отсечения фона: захватывает волосы, плечи и лицо
+        if (lum > 0.08) {
           // Буква по горизонтали складывается в непрерывное слово Д А Ш А
           const char = cleanWord[colIndex % cleanWord.length];
           const style = getRomanticStyle(lum, r, g, b);
@@ -523,10 +542,20 @@
         }
 
         // Проверка завершения
-        if (progressRatio < 1 && lastDrawnIndex < totalPoints) {
+        if (progressRatio < 1) {
           animationFrameId = requestAnimationFrame(animate);
         } else {
-          // Финальный аккорд: гарантируем точный счётчик и callback
+          // Финальный аккорд: гарантируем полную отрисовку всех букв и точный счётчик 1450
+          for (let i = lastDrawnIndex; i < totalPoints; i++) {
+            const p = points[i];
+            ctx.save();
+            ctx.shadowColor = p.style.shadowColor;
+            ctx.shadowBlur = p.style.shadowBlur;
+            ctx.fillStyle = p.style.fillStyle;
+            ctx.fillText(p.char, p.x, p.y);
+            ctx.restore();
+          }
+          lastDrawnIndex = totalPoints;
           if (onProgress) onProgress(targetCount);
           isFinished = true;
           if (onComplete) onComplete();
