@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Тебе эмоция</title>
+  
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Caveat:wght@600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Фоновые визуальные эффекты: сияние и частицы -->
+  <div class="ambient-glow glow-top"></div>
+  <div class="ambient-glow glow-bottom"></div>
+  <canvas id="starsCanvas" class="stars-canvas"></canvas>
+  <div id="particleContainer" class="particle-container"></div>
+
+  <!-- Кнопка управления романтической музыкой / звуками -->
+  <button id="musicToggleBtn" class="music-toggle-btn" aria-label="Включить музыку" title="Музыка">
+    <span class="music-icon">🎵</span>
+  </button>
+
+  <main class="app-container">
+
+    <!-- ==========================================
+         ЭКРАН 1: СЕКРЕТНЫЙ ВОПРОС (ЗАГАДКА)
+    =========================================== -->
+    <section id="screen-question" class="screen active">
+      <div class="screen-content center-flow">
+        <div class="title-wrap">
+          <h1 class="main-title serif-title">Эта эмоция закрыта словом</h1>
+          <p id="questionText" class="subtitle italic-serif">где мы познакомились?</p>
+        </div>
+
+        <form id="questionForm" class="question-form" onsubmit="return false;">
+          <div class="input-wrap">
+            <input type="text" id="answerInput" class="glow-input" placeholder="слово" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+            <div id="errorHint" class="error-hint hidden">Неправильный ответ... Вспомни получше! 😉</div>
+          </div>
+          <button type="submit" id="submitAnswerBtn" class="btn btn-primary glow-btn">
+            <span class="btn-text">Открыть</span>
+            <span class="btn-loader hidden">проверяю...</span>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         ЭКРАН 2: ИНТЕРАКТИВНЫЙ КОНВЕРТ С ПЕЧАТЬЮ
+    =========================================== -->
+    <section id="screen-envelope" class="screen">
+      <div class="screen-content center-flow">
+        <h2 id="envelopeHeading" class="envelope-heading serif-title">Даша, тебе письмо</h2>
+
+        <div class="envelope-scene">
+          <div id="envelopeElement" class="envelope-box">
+            <!-- Верхний клапан конверта -->
+            <div class="envelope-flap"></div>
+            <!-- Бумага внутри конверта (выезжает при клике) -->
+            <div class="envelope-paper-peek">
+              <span class="paper-peek-heart">🤍</span>
+            </div>
+            <!-- Тело конверта -->
+            <div class="envelope-pocket"></div>
+            
+            <!-- Сургучная печать с именем -->
+            <div id="waxSeal" class="wax-seal">
+              <div class="wax-inner">
+                <span id="waxSealText" class="wax-name">Даша</span>
+              </div>
+              <div class="wax-ring"></div>
+            </div>
+          </div>
+        </div>
+
+        <p class="envelope-prompt italic-serif">открой, это тебе</p>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         ЭКРАН 3: РАЗВЁРНУТОЕ ПИСЬМО + POLAROID ФОТО
+    =========================================== -->
+    <section id="screen-letter" class="screen">
+      <div class="screen-content letter-scroll-area">
+        <div class="letter-card">
+          <div class="letter-header">
+            <span id="letterRecipient" class="handwritten-title">это тебе, Даша</span>
+            <h2 id="letterGreeting" class="letter-main-greeting">Даша, с днём рождения!</h2>
+          </div>
+
+          <div id="letterBodyContainer" class="letter-paragraphs">
+            <!-- Параграфы письма заполняются из config.js -->
+          </div>
+
+          <!-- Polaroid-фото с подписью -->
+          <div class="polaroid-wrapper">
+            <div class="polaroid-card">
+              <div class="polaroid-pin">🤍</div>
+              <div class="polaroid-img-frame">
+                <img id="polaroidImage" src="assets/polaroid_placeholder.png" alt="Наше фото" class="polaroid-img">
+              </div>
+              <p id="polaroidCaption" class="polaroid-caption">мими!</p>
+            </div>
+          </div>
+
+          <div class="letter-sign-wrap">
+            <span id="letterSign" class="letter-sign">твой Никита</span>
+          </div>
+
+          <!-- Кнопки внизу письма: «Хорошо» и шутливая «Ты забыл» -->
+          <div class="letter-actions">
+            <button id="letterOkBtn" class="btn btn-primary glow-btn">Хорошо</button>
+            <button id="letterForgotBtn" class="btn btn-ghost">Ты забыл</button>
+          </div>
+          <div id="forgotJokeAlert" class="forgot-alert hidden">
+            Как я мог забыть?! Я помню каждую секунду с тобой! 🥰
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         ЭКРАН 4: ВЫБОР СВИДАНИЯ («Что будем делать?»)
+    =========================================== -->
+    <section id="screen-activities" class="screen">
+      <div class="screen-content">
+        <div class="step-header">
+          <h2 class="serif-title step-title">Что будем делать?</h2>
+          <p class="step-subtitle">выбери вариант нашего свидания</p>
+        </div>
+
+        <div id="activitiesList" class="activities-grid">
+          <!-- Карточки вариантов генерируются динамически из config.js -->
+        </div>
+
+        <div class="step-footer">
+          <button id="activityNextBtn" class="btn btn-primary glow-btn disabled" disabled>
+            Дальше
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         ЭКРАН 5: ВЫБОР ДАТЫ («Когда?»)
+    =========================================== -->
+    <section id="screen-date" class="screen">
+      <div class="screen-content center-flow">
+        <div class="step-header">
+          <h2 class="serif-title step-title">Когда?</h2>
+          <p class="step-subtitle">выбери самый удобный день</p>
+        </div>
+
+        <div id="dateWheel" class="picker-wheel-container">
+          <!-- Список дат генерируется из config.js -->
+        </div>
+
+        <div class="step-footer">
+          <button id="dateNextBtn" class="btn btn-primary glow-btn">
+            Дальше
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         ЭКРАН 6: ВЫБОР ВРЕМЕНИ («Во сколько?»)
+    =========================================== -->
+    <section id="screen-time" class="screen">
+      <div class="screen-content center-flow">
+        <div class="step-header">
+          <h2 class="serif-title step-title">Во сколько?</h2>
+          <p class="step-subtitle">выбери точное время встречи</p>
+        </div>
+
+        <div id="timeWheel" class="picker-wheel-container">
+          <!-- Список времени генерируется из config.js -->
+        </div>
+
+        <div class="step-footer">
+          <button id="timeNextBtn" class="btn btn-primary glow-btn">
+            Готово
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         ЭКРАН 7: ФИНАЛ — ПОРТРЕТ ИЗ СЛОВ + ИТОГ СВИДАНИЯ
+    =========================================== -->
+    <section id="screen-mosaic" class="screen">
+      <div class="screen-content mosaic-flow">
+        <!-- Холст для сборки портрета из слов -->
+        <div class="mosaic-container">
+          <canvas id="mosaicCanvas" width="400" height="520" class="mosaic-canvas"></canvas>
+          <div class="mosaic-count-badge">
+            <span id="mosaicCounter">0</span>
+          </div>
+        </div>
+
+        <!-- Подпись под портретом: «по 1450 раз думаю о тебе каждый день Даша)» -->
+        <p id="mosaicFooterText" class="mosaic-caption italic-serif">
+          по <span id="mosaicCaptionCount" class="highlight-count">1450</span> раз думаю о тебе каждый день <span id="mosaicCaptionName">Даша</span>)
+        </p>
+
+        <!-- Карточка плана свидания -->
+        <div class="date-summary-card">
+          <div class="summary-top">
+            <span class="summary-label">Выходим</span>
+          </div>
+          <div class="summary-main">
+            <span id="summaryIcon" class="summary-icon">🎡</span>
+            <div class="summary-info">
+              <h3 id="summaryActivity" class="summary-title">Парк и сладкая вата</h3>
+              <p id="summaryDatetime" class="summary-time">чт, 10 сентября · 20:00</p>
+              <p id="summarySubtitle" class="summary-sub">как маленькие</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Кнопки отправки / поделиться -->
+        <div class="final-actions">
+          <button id="sendTgBtn" class="btn btn-primary glow-btn btn-large">
+            <span class="btn-tg-icon">✈️</span>
+            <span>Отправить ответ</span>
+          </button>
+          <button id="copySummaryBtn" class="btn btn-ghost">
+            <span>Скопировать результат</span>
+          </button>
+        </div>
+
+        <div id="sentFeedback" class="sent-notification hidden">
+          ❤️ Ответ успешно отправлен! Жду нашей встречи!
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Скрипты -->
+  <script src="config.js"></script>
+  <script src="mosaic.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
