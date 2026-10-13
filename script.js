@@ -575,7 +575,7 @@
         targetCount: config.mosaicTargetCount || 1450,
         onProgress: (current) => {
           if (counterEl) counterEl.textContent = current;
-          if (current % 120 === 0) triggerHaptic('selection');
+          if (current > 0 && current % 140 === 0) triggerHaptic('selection');
         },
         onComplete: () => {
           triggerHaptic('success');

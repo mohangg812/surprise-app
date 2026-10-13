@@ -105,12 +105,30 @@
         resolve(null);
         return;
       }
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (!settled) {
+          settled = true;
+          console.warn('[renderWordMosaic] Image load timeout, using romantic silhouette fallback.');
+          resolve(null);
+        }
+      }, 1500);
+
       const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => resolve(img);
+      img.onload = () => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          resolve(img);
+        }
+      };
       img.onerror = () => {
-        console.warn('[renderWordMosaic] Failed to load image:', src, 'Using romantic silhouette fallback.');
-        resolve(null);
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          console.warn('[renderWordMosaic] Image load error, using romantic silhouette fallback.');
+          resolve(null);
+        }
       };
       img.src = src;
     });
