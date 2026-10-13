@@ -55,10 +55,22 @@
   }
 
   function triggerHaptic(type = 'light') {
-    if (tg?.HapticFeedback) {
-      if (type === 'success') tg.HapticFeedback.notificationOccurred('success');
-      else if (type === 'error') tg.HapticFeedback.notificationOccurred('error');
-      else tg.HapticFeedback.impactOccurred(type);
+    try {
+      if (tg?.HapticFeedback) {
+        if (type === 'selection') {
+          if (typeof tg.HapticFeedback.selectionChanged === 'function') {
+            tg.HapticFeedback.selectionChanged();
+          } else {
+            tg.HapticFeedback.impactOccurred?.('light');
+          }
+        } else if (type === 'success' || type === 'error' || type === 'warning') {
+          tg.HapticFeedback.notificationOccurred?.(type);
+        } else {
+          tg.HapticFeedback.impactOccurred?.(type || 'light');
+        }
+      }
+    } catch (e) {
+      // Игнорируем любые ошибки виброотклика
     }
   }
 
@@ -246,7 +258,7 @@
     const actList = document.getElementById('activitiesList');
     if (actList && Array.isArray(config.activities)) {
       actList.innerHTML = config.activities.map((act, idx) => `
-        <div class="activity-card" data-id="${act.id}" data-index="${idx}">
+        <div class="activity-card ${idx === 0 ? 'selected' : ''}" data-id="${act.id}" data-index="${idx}">
           <span class="activity-icon">${act.icon || '✨'}</span>
           <div class="activity-info">
             <span class="activity-title">${act.title}</span>
@@ -254,6 +266,9 @@
           </div>
         </div>
       `).join('');
+      if (config.activities.length > 0) {
+        state.selectedActivity = config.activities[0];
+      }
     }
 
     // 5. Даты
@@ -402,13 +417,19 @@
       const actId = card.getAttribute('data-id');
       state.selectedActivity = config.activities.find(a => a.id === actId);
 
+      if (actNextBtn) {
+        actNextBtn.disabled = false;
+        actNextBtn.removeAttribute('disabled');
+        actNextBtn.classList.remove('disabled');
+      }
+
       triggerHaptic('selection');
-      actNextBtn?.classList.remove('disabled');
-      actNextBtn?.removeAttribute('disabled');
     });
 
     actNextBtn?.addEventListener('click', () => {
-      if (!state.selectedActivity) return;
+      if (!state.selectedActivity && config.activities.length > 0) {
+        state.selectedActivity = config.activities[0];
+      }
       triggerHaptic('medium');
       showScreen('screen-date');
     });
