@@ -320,15 +320,21 @@
       footerText.textContent = config.mosaicSubtext;
     }
 
-    // 8. Кнопки с юзернеймом заказчика
+    // 8. Кнопки с юзернеймом заказчика и телефоном
     const tgUsername = (config.telegramUsername || 'gahrfb').replace('@', '').trim();
+    const phone = config.phone || '+375333636015';
+
     const sendTgBtnEl = document.getElementById('sendTgBtn');
     if (sendTgBtnEl) {
-      sendTgBtnEl.innerHTML = `<span class="btn-tg-icon">✈️</span><span>Отправить ответ @${tgUsername}</span>`;
+      sendTgBtnEl.innerHTML = `<span class="btn-tg-icon">✈️</span><span>Отправить ответ в Telegram (@${tgUsername})</span>`;
     }
     const openDirectBtnEl = document.getElementById('openDirectBtn');
     if (openDirectBtnEl) {
-      openDirectBtnEl.innerHTML = `<span class="btn-tg-icon">💬</span><span>Открыть диалог с @${tgUsername}</span>`;
+      openDirectBtnEl.innerHTML = `<span class="btn-tg-icon">💬</span><span>Диалог с @${tgUsername} напрямую</span>`;
+    }
+    const openPhoneBtnEl = document.getElementById('openPhoneBtn');
+    if (openPhoneBtnEl) {
+      openPhoneBtnEl.innerHTML = `<span class="btn-tg-icon">📱</span><span>Отправить по номеру (${phone})</span>`;
     }
   }
 
@@ -762,27 +768,36 @@
       }
     }
 
-    function openTelegramUrl(url) {
-      const tgApp = window.Telegram?.WebApp;
-      if (tgApp?.openTelegramLink) {
-        try {
-          tgApp.openTelegramLink(url);
-          return;
-        } catch (e) {
-          console.warn("openTelegramLink error:", e);
-        }
-      }
+    function safeOpenUrl(url) {
+      // Никогда не трогаем window.location.href, чтобы браузер или WebView не зацикливался!
       try {
-        const win = window.open(url, '_blank');
-        if (!win || win.closed || typeof win.closed === 'undefined') {
-          window.location.href = url;
-        }
-      } catch (e) {
-        window.location.href = url;
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          try { document.body.removeChild(a); } catch (e) {}
+        }, 300);
+      } catch (err) {
+        window.open(url, '_blank');
       }
     }
 
-    // 1. Основная кнопка: Отправить ответ в Telegram (через Share с готовым текстом)
+    function openTelegramChat(url) {
+      if (tg?.openTelegramLink) {
+        try {
+          tg.openTelegramLink(url);
+          return;
+        } catch (e) {
+          console.warn("tg.openTelegramLink error:", e);
+        }
+      }
+      safeOpenUrl(url);
+    }
+
+    // 1. Основная кнопка: Отправить ответ в Telegram (Share с готовым текстом)
     sendTgBtn?.addEventListener('click', () => {
       triggerHaptic('success');
       const text = buildResultText();
@@ -790,28 +805,12 @@
       // Гарантированно копируем текст в буфер обмена
       copyToClipboard(text);
 
-      // Если Mini App запущен ботом — отправляем WebApp Data
-      if (tg) {
-        try {
-          const payload = {
-            activity: state.selectedActivity,
-            date: state.selectedDate,
-            time: state.selectedTime,
-            gifts: state.quizGifts,
-            text: text
-          };
-          tg.sendData(JSON.stringify(payload));
-        } catch (err) {
-          console.warn("tg.sendData:", err);
-        }
-      }
-
-      // Открываем нативный Telegram Share (текст уже предварительно заполнен)
-      const shareUrl = `https://t.me/share/url?text=${encodeURIComponent(text)}`;
-      openTelegramUrl(shareUrl);
+      const username = (config.telegramUsername || 'gahrfb').replace('@', '').trim();
+      // Открываем нативное окно "Поделиться" в Telegram с уже готовым напечатанным текстом
+      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent('https://t.me/' + username)}&text=${encodeURIComponent(text)}`;
+      safeOpenUrl(shareUrl);
 
       // Показываем четкую подсказку пользователю
-      const username = (config.telegramUsername || 'gahrfb').replace('@', '').trim();
       if (sentFeedback) {
         sentFeedback.innerHTML = `
           <div class="feedback-badge">✨ Текст скопирован в буфер!</div>
@@ -838,7 +837,7 @@
       // Открываем прямой чат с пользователем
       const username = (config.telegramUsername || 'gahrfb').replace('@', '').trim();
       const directUrl = `https://t.me/${username}`;
-      openTelegramUrl(directUrl);
+      openTelegramChat(directUrl);
 
       // Инструкция пользователю
       if (sentFeedback) {
@@ -855,7 +854,34 @@
       spawnHearts(20);
     });
 
-    // 3. Третья кнопка: Скопировать текст ответа
+    // 3. Третья кнопка: Отправить по номеру телефона (+375333636015)
+    openPhoneBtn?.addEventListener('click', () => {
+      triggerHaptic('success');
+      const text = buildResultText();
+
+      copyToClipboard(text);
+
+      const phone = (config.phone || '+375333636015').replace(/[^0-9+]/g, '');
+      const rawDigits = phone.replace('+', '');
+      // Открываем WhatsApp с уже готовым текстом сообщения
+      const waUrl = `https://wa.me/${rawDigits}?text=${encodeURIComponent(text)}`;
+      safeOpenUrl(waUrl);
+
+      if (sentFeedback) {
+        sentFeedback.innerHTML = `
+          <div class="feedback-badge">📱 Номер: ${config.phone || '+375 33 363-60-15'}</div>
+          <div class="feedback-title">Текст скопирован в буфер!</div>
+          <p class="feedback-desc">
+            Открываем чат с готовым текстом. Также можно написать в <a href="https://t.me/+${rawDigits}" target="_blank" style="color:#ff69b4;text-decoration:underline;font-weight:600;">Telegram по номеру</a> или отправить SMS 🥰
+          </p>
+        `;
+        sentFeedback.classList.remove('hidden');
+      }
+
+      spawnHearts(20);
+    });
+
+    // 4. Четвертая кнопка: Скопировать текст ответа
     copyBtn?.addEventListener('click', () => {
       triggerHaptic('light');
       const text = buildResultText();
@@ -871,7 +897,7 @@
         sentFeedback.innerHTML = `
           <div class="feedback-badge">📋 Скопировано!</div>
           <p class="feedback-desc">
-            Текст твоего выбора в буфере обмена. Ты можешь вставить и отправить его <b>@${username}</b> в Telegram ❤️
+            Текст твоего выбора в буфере обмена. Ты можешь вставить и отправить его <b>@${username}</b> или по номеру в любой мессенджер ❤️
           </p>
         `;
         sentFeedback.classList.remove('hidden');

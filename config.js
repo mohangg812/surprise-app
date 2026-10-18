@@ -94,6 +94,7 @@ window.APP_CONFIG = {
   mosaicTargetCount: 183, // 183 дня (полгода вместе с 27 апреля)
   mosaicSubtext: "каждый день мои мысли о тебе любимость)",
 
-  // Настройки Telegram
+  // Настройки Telegram и контакты заказчика
   telegramUsername: "gahrfb",
+  phone: "+375333636015",
 };
