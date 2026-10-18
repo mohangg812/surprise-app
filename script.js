@@ -406,14 +406,35 @@
     const q = quiz[state.quizStep];
     const answerInput = document.getElementById('quizAnswerInput');
     const errorEl = document.getElementById('quizError');
-    const val = (answerInput?.value || '').trim().toLowerCase();
+    const rawVal = (answerInput?.value || '').trim().toLowerCase();
+    const cleanVal = rawVal.replace(/\s+/g, ' ');
 
+    if (!cleanVal) return;
+
+    // 1. Проверка: если введена просто цифра без месяца
+    if (/^\d{1,2}$/.test(rawVal)) {
+      triggerHaptic('error');
+      if (errorEl) {
+        errorEl.textContent = "💡 Почти! Напиши ещё и месяц (например: словами или 27.04) 😉";
+        errorEl.classList.remove('hidden');
+      }
+      if (answerInput) {
+        answerInput.classList.add('shake');
+        setTimeout(() => answerInput.classList.remove('shake'), 450);
+      }
+      return;
+    }
+
+    // 2. Точная проверка по списку правильных ответов
     const validAnswers = (q.answers || []).map(a => a.toLowerCase().trim());
     const isMatch = validAnswers.some(ans => {
-      return val === ans || val.includes(ans) || ans.includes(val);
+      const cleanAns = ans.replace(/\s+/g, ' ');
+      const noSpaceAns = ans.replace(/\s+/g, '');
+      const noSpaceVal = cleanVal.replace(/\s+/g, '');
+      return cleanVal === cleanAns || noSpaceVal === noSpaceAns;
     });
 
-    if (isMatch && val.length > 0) {
+    if (isMatch) {
       // Верный ответ!
       triggerHaptic('success');
       if (errorEl) errorEl.classList.add('hidden');

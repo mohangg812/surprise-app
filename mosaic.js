@@ -51,49 +51,28 @@
    * с мягким подмешиванием исходного оттенка фото для узнаваемости черт лица.
    */
   function getRomanticStyle(lum, origR, origG, origB) {
-    // lum нормализован в диапазоне [0.10, 1.0]
-    const t = Math.max(0, Math.min(1, (lum - 0.10) / 0.90));
+    // Гамма-коррекция для детальной и чёткой прорисовки лица
+    const adjLum = Math.pow(Math.max(0, Math.min(1, lum)), 0.75);
 
-    let baseR, baseG, baseB;
-    let shadowColor, shadowBlur;
-    let alpha = 0.75 + t * 0.25;
+    // 84% подлинных цветов фотографии девушки + 16% романтического ореола Celamur
+    const finalR = Math.min(255, Math.round(origR * 0.84 + 255 * 0.16 * adjLum));
+    const finalG = Math.min(255, Math.round(origG * 0.84 + 190 * 0.16 * adjLum));
+    const finalB = Math.min(255, Math.round(origB * 0.84 + 215 * 0.16 * adjLum));
 
-    if (t < 0.42) {
-      // Теневая/полутеневая зона: от глубокой розы к мягкому розовому
-      const subT = t / 0.42;
-      baseR = Math.round(lerp(PALETTE.deepRose.r, PALETTE.softPink.r, subT));
-      baseG = Math.round(lerp(PALETTE.deepRose.g, PALETTE.softPink.g, subT));
-      baseB = Math.round(lerp(PALETTE.deepRose.b, PALETTE.softPink.b, subT));
-      shadowBlur = Math.round(lerp(2, 5, subT));
-      shadowColor = `rgba(255, 117, 140, ${0.4 + subT * 0.25})`;
-    } else if (t < 0.78) {
-      // Полутона и свет лица: от мягкого розового (#ff758c) к золоту (#ffc371)
-      const subT = (t - 0.42) / 0.36;
-      baseR = Math.round(lerp(PALETTE.softPink.r, PALETTE.warmGold.r, subT));
-      baseG = Math.round(lerp(PALETTE.softPink.g, PALETTE.warmGold.g, subT));
-      baseB = Math.round(lerp(PALETTE.softPink.b, PALETTE.warmGold.b, subT));
-      shadowBlur = Math.round(lerp(5, 9, subT));
-      shadowColor = `rgba(255, 195, 113, ${0.6 + subT * 0.2})`;
-    } else {
-      // Яркие блики (улыбка, взгляд, контур волос): от золота к белому неону
-      const subT = (t - 0.78) / 0.22;
-      baseR = Math.round(lerp(PALETTE.warmGold.r, PALETTE.pureWhite.r, subT));
-      baseG = Math.round(lerp(PALETTE.warmGold.g, PALETTE.pureWhite.g, subT));
-      baseB = Math.round(lerp(PALETTE.warmGold.b, PALETTE.pureWhite.b, subT));
-      shadowBlur = Math.round(lerp(9, 14, subT));
-      shadowColor = `rgba(255, 245, 230, ${0.85 + subT * 0.15})`;
+    let shadowBlur = 0;
+    let shadowColor = 'transparent';
+
+    // Сияющие акценты на брекетах, улыбке и взгляде
+    if (lum > 0.60) {
+      shadowBlur = 3;
+      shadowColor = 'rgba(255, 255, 255, 0.55)';
     }
 
-    // Деликатное подмешивание 24% исходного цвета фото для выразительности взгляда и губ
-    const finalR = Math.min(255, Math.round(baseR * 0.76 + origR * 0.24));
-    const finalG = Math.min(255, Math.round(baseG * 0.76 + origG * 0.24));
-    const finalB = Math.min(255, Math.round(baseB * 0.76 + origB * 0.24));
-
     return {
-      fillStyle: `rgba(${finalR}, ${finalG}, ${finalB}, ${alpha.toFixed(2)})`,
+      fillStyle: `rgb(${finalR}, ${finalG}, ${finalB})`,
       shadowColor: shadowColor,
       shadowBlur: shadowBlur,
-      isHighlight: t > 0.8
+      isHighlight: lum > 0.65
     };
   }
 
@@ -277,7 +256,8 @@
       sx = (srcW - sWidth) / 2;
     } else {
       sHeight = srcW / dstAspect;
-      sy = (srcH - sHeight) / 2;
+      // Точный фокус на лице (глаза, улыбка, брекеты)
+      sy = Math.max(0, (srcH - sHeight) * 0.35);
     }
 
     offCtx.drawImage(sourceImgOrCanvas, sx, sy, sWidth, sHeight, 0, 0, width, height);
@@ -285,9 +265,9 @@
     const imgData = offCtx.getImageData(0, 0, width, height);
     const data = imgData.data;
 
-    // Шаг сетки: ~5.5-6px для заполнения всего портрета (~1300-1600 букв)
-    const step = Math.max(5, Math.min(7, Math.round(width / 68)));
-    const cleanWord = (word && word.trim().length > 0) ? word.trim().toUpperCase() : 'ДАША';
+    // Шаг сетки 4px для высокоточного фотореалистичного портрета
+    const step = 4;
+    const cleanWord = (word && word.trim().length > 0) ? word.trim().toUpperCase() : 'УЛЬЯША';
 
     const rawPoints = [];
     let sumX = 0;
@@ -320,9 +300,9 @@
         // Яркость по стандарту ITU-R BT.601
         const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 
-        // Порог отсечения фона: захватывает волосы, плечи и лицо
-        if (lum > 0.08) {
-          // Буква по горизонтали складывается в непрерывное слово Д А Ш А
+        // Порог отсечения фона: захватывает волосы, плечи и черты лица
+        if (lum > 0.06) {
+          // Буква по горизонтали складывается в непрерывное слово
           const char = cleanWord[colIndex % cleanWord.length];
           const style = getRomanticStyle(lum, r, g, b);
 
@@ -480,7 +460,7 @@
       drawBaseBackground(focalX, focalY);
 
       // Настройка шрифта для чёткого и эстетичного отображения букв
-      const fontSize = Math.max(9, Math.round(step * 1.15));
+      const fontSize = Math.max(5, Math.round(step * 1.25 * 10) / 10);
       ctx.font = `700 ${fontSize}px "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
