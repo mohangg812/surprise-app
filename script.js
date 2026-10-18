@@ -429,9 +429,12 @@
       playTone(523.25, 0.8);
       spawnHearts(15);
     } else {
-      // Неверный ответ
+      // Неверный ответ — выводим нативную подсказку
       triggerHaptic('error');
-      if (errorEl) errorEl.classList.remove('hidden');
+      if (errorEl) {
+        errorEl.textContent = q.hint || "Попробуй ещё раз! 😉";
+        errorEl.classList.remove('hidden');
+      }
       if (answerInput) {
         answerInput.classList.add('shake');
         setTimeout(() => answerInput.classList.remove('shake'), 450);

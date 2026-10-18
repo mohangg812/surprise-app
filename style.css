@@ -469,17 +469,17 @@ body {
 }
 
 .letter-card {
-  background: #fffaf2;
+  background: #fffdf9;
   color: #2b1d28;
-  border-radius: 16px;
-  padding: 30px 22px 24px;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+  border-radius: 20px;
+  padding: 32px 24px 26px;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.4);
   position: relative;
-  border: 1px solid #f1e4d3;
+  border: 1px solid rgba(240, 224, 212, 0.85);
 }
 
 .letter-header {
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 
 .handwritten-title {
@@ -492,71 +492,78 @@ body {
 
 .letter-main-greeting {
   font-family: var(--font-serif);
-  font-size: 23px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
   color: #1f121d;
   line-height: 1.25;
 }
 
 .letter-paragraphs p {
   font-family: var(--font-serif);
-  font-size: 16.5px;
-  line-height: 1.6;
-  margin-bottom: 14px;
-  color: #3b2a38;
+  font-size: 17px;
+  line-height: 1.68;
+  margin-bottom: 16px;
+  color: #2e1d2c;
+  letter-spacing: 0.15px;
 }
 
-/* Polaroid-фотография */
+/* Polaroid-фотография — ровная, четкая, пропорциональная */
 .polaroid-wrapper {
-  margin: 22px 0 20px;
+  margin: 24px 0 22px;
   display: flex;
   justify-content: center;
 }
 
 .polaroid-card {
   background: #ffffff;
-  padding: 12px 12px 16px;
-  border-radius: 3px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15), 0 1px 4px rgba(0, 0, 0, 0.08);
-  transform: rotate(-2deg);
-  width: 230px;
+  padding: 12px 12px 18px;
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08);
+  transform: none; /* ровная без перекоса */
+  width: 270px;
   position: relative;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  margin: 0 auto;
 }
 
 .polaroid-card:hover {
-  transform: rotate(0deg) scale(1.03);
+  transform: scale(1.02);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.22);
 }
 
 .polaroid-pin {
   position: absolute;
-  top: -8px;
+  top: -10px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 16px;
+  font-size: 18px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
 .polaroid-img-frame {
   width: 100%;
-  height: 210px;
-  background: #f0e6e6;
+  height: 290px;
+  background: #f4ecec;
   overflow: hidden;
-  border-radius: 2px;
+  border-radius: 4px;
 }
 
 .polaroid-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center 20%;
   display: block;
 }
 
 .polaroid-caption {
   font-family: var(--font-handwriting);
-  font-size: 20px;
-  color: #554452;
+  font-size: 22px;
+  font-weight: 700;
+  color: #422d3e;
   text-align: center;
   margin-top: 10px;
+  letter-spacing: 0.5px;
 }
 
 .letter-sign-wrap {
@@ -982,6 +989,22 @@ body {
 .quiz-input {
   max-width: 280px;
   margin: 0 auto 12px;
+}
+
+#quizError {
+  background: rgba(255, 210, 133, 0.15);
+  border: 1px solid rgba(255, 210, 133, 0.35);
+  border-radius: 14px;
+  color: var(--accent-gold);
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  line-height: 1.45;
+  padding: 10px 16px;
+  margin: 8px auto 14px;
+  max-width: 300px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  animation: fadeIn 0.3s ease;
 }
 
 /* Карточка подарка (выскакивает после правильного ответа) */

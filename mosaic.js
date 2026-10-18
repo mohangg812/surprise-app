@@ -106,15 +106,17 @@
         return;
       }
       let settled = false;
+      const timeoutMs = src.startsWith('data:') ? 2000 : 8000;
       const timer = setTimeout(() => {
         if (!settled) {
           settled = true;
           console.warn('[renderWordMosaic] Image load timeout, using romantic silhouette fallback.');
           resolve(null);
         }
-      }, 1500);
+      }, timeoutMs);
 
       const img = new Image();
+      img.crossOrigin = 'anonymous';
       img.onload = () => {
         if (!settled) {
           settled = true;
@@ -131,6 +133,13 @@
         }
       };
       img.src = src;
+
+      // Если изображение уже загружено (например, Data URI или из кэша)
+      if (img.complete && img.naturalWidth > 0) {
+        settled = true;
+        clearTimeout(timer);
+        resolve(img);
+      }
     });
   }
 
