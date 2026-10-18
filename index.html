@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Caveat:wght@600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 
@@ -50,6 +50,12 @@
             <span class="btn-loader hidden">проверяю...</span>
           </button>
         </form>
+
+        <!-- Кнопка подсказки -->
+        <button id="hintBtn" class="btn btn-ghost hint-btn">Нужна подсказка? 🤔</button>
+        <div id="hintText" class="hint-bubble hidden">
+          🎵 Подсказка: это связано с музыкой и танцами...
+        </div>
       </div>
     </section>
 
@@ -58,7 +64,7 @@
     =========================================== -->
     <section id="screen-envelope" class="screen">
       <div class="screen-content center-flow">
-        <h2 id="envelopeHeading" class="envelope-heading serif-title">Даша, тебе письмо</h2>
+        <h2 id="envelopeHeading" class="envelope-heading serif-title">Ульяша, тебе письмо</h2>
 
         <div class="envelope-scene">
           <div id="envelopeElement" class="envelope-box">
@@ -74,14 +80,14 @@
             <!-- Сургучная печать с именем -->
             <div id="waxSeal" class="wax-seal">
               <div class="wax-inner">
-                <span id="waxSealText" class="wax-name">Даша</span>
+                <span id="waxSealText" class="wax-name">Ульяша</span>
               </div>
               <div class="wax-ring"></div>
             </div>
           </div>
         </div>
 
-        <p class="envelope-prompt italic-serif">открой, это тебе</p>
+        <p class="envelope-prompt italic-serif">открой, это тебе ❤️</p>
       </div>
     </section>
 
@@ -92,8 +98,8 @@
       <div class="screen-content letter-scroll-area">
         <div class="letter-card">
           <div class="letter-header">
-            <span id="letterRecipient" class="handwritten-title">это тебе, Даша</span>
-            <h2 id="letterGreeting" class="letter-main-greeting">Даша, с днём рождения!</h2>
+            <span id="letterRecipient" class="handwritten-title">это тебе, Ульяша</span>
+            <h2 id="letterGreeting" class="letter-main-greeting">Ульяша, с полугодием! 💕</h2>
           </div>
 
           <div id="letterBodyContainer" class="letter-paragraphs">
@@ -105,14 +111,14 @@
             <div class="polaroid-card">
               <div class="polaroid-pin">🤍</div>
               <div class="polaroid-img-frame">
-                <img id="polaroidImage" src="assets/polaroid_placeholder.png" alt="Наше фото" class="polaroid-img">
+                <img id="polaroidImage" src="assets/polaroid.jpg" alt="Наше фото" class="polaroid-img">
               </div>
-              <p id="polaroidCaption" class="polaroid-caption">мими!</p>
+              <p id="polaroidCaption" class="polaroid-caption">мы 🤍</p>
             </div>
           </div>
 
           <div class="letter-sign-wrap">
-            <span id="letterSign" class="letter-sign">твой Никита</span>
+            <span id="letterSign" class="letter-sign">твой любимый ❤️</span>
           </div>
 
           <!-- Кнопки внизу письма: «Хорошо» и шутливая «Ты забыл» -->
@@ -128,24 +134,57 @@
     </section>
 
     <!-- ==========================================
-         ЭКРАН 4: ВЫБОР СВИДАНИЯ («Что будем делать?»)
+         ЭКРАН 4: КВИЗ — ВОПРОСЫ С ПОДАРКАМИ
     =========================================== -->
     <section id="screen-activities" class="screen">
-      <div class="screen-content">
+      <div class="screen-content center-flow">
         <div class="step-header">
-          <h2 class="serif-title step-title">Что будем делать?</h2>
-          <p class="step-subtitle">выбери вариант нашего свидания</p>
+          <h2 class="serif-title step-title">Проверка на знания 💕</h2>
+          <p class="step-subtitle">ответь на вопросы и получи сюрпризы</p>
         </div>
 
-        <div id="activitiesList" class="activities-grid">
-          <!-- Карточки вариантов генерируются динамически из config.js -->
+        <!-- Прогресс-бар квиза -->
+        <div class="quiz-progress">
+          <div class="quiz-progress-bar">
+            <div id="quizProgressFill" class="quiz-progress-fill" style="width: 0%"></div>
+          </div>
+          <span id="quizProgressText" class="quiz-progress-text">0 / 3</span>
         </div>
 
-        <div class="step-footer">
-          <button id="activityNextBtn" class="btn btn-primary glow-btn">
-            Дальше
-          </button>
+        <!-- Контейнер текущего вопроса -->
+        <div id="quizContainer" class="quiz-container">
+          <div id="quizQuestion" class="quiz-question">
+            <!-- Вопрос подставляется динамически -->
+          </div>
+          <div class="quiz-input-wrap">
+            <input type="text" id="quizAnswerInput" class="glow-input quiz-input" placeholder="твой ответ..." autocomplete="off" autocorrect="off">
+            <div id="quizError" class="error-hint hidden">Попробуй ещё раз! 😊</div>
+          </div>
+          <button id="quizCheckBtn" class="btn btn-primary glow-btn">Проверить</button>
         </div>
+
+        <!-- Карточка подарка (скрыта, появляется после верного ответа) -->
+        <div id="quizGiftCard" class="quiz-gift-card hidden">
+          <div class="quiz-gift-icon" id="quizGiftIcon">🧸</div>
+          <div class="quiz-gift-text" id="quizGiftText">Плюшевый мишка ;)</div>
+          <p class="quiz-gift-label">Твой подарок-сюрприз!</p>
+          <button id="quizNextBtn" class="btn btn-primary glow-btn">Дальше →</button>
+        </div>
+
+        <!-- Бонус после всех вопросов: кино -->
+        <div id="quizBonus" class="quiz-bonus hidden">
+          <div class="quiz-bonus-icon">🎬</div>
+          <h3 id="quizBonusTitle" class="quiz-bonus-title">А ещё... пойдём в кино!</h3>
+          <p id="quizBonusSubtitle" class="quiz-bonus-subtitle">это наш бонусный план на свидание</p>
+          
+          <!-- Список полученных подарков -->
+          <div id="quizGiftsSummary" class="quiz-gifts-summary">
+            <!-- Заполняется динамически -->
+          </div>
+          
+          <button id="quizDoneBtn" class="btn btn-primary glow-btn btn-large">Круто! Выбираем дату 💕</button>
+        </div>
+
       </div>
     </section>
 
@@ -206,22 +245,22 @@
           </div>
         </div>
 
-        <!-- Подпись под портретом: «по 1450 раз думаю о тебе каждый день Даша)» -->
+        <!-- Подпись под портретом -->
         <p id="mosaicFooterText" class="mosaic-caption italic-serif">
-          по <span id="mosaicCaptionCount" class="highlight-count">1450</span> раз думаю о тебе каждый день <span id="mosaicCaptionName">Даша</span>)
+          каждый день мои мысли о тебе, <span id="mosaicCaptionName">любимость</span> 💕
         </p>
 
         <!-- Карточка плана свидания -->
         <div class="date-summary-card">
           <div class="summary-top">
-            <span class="summary-label">Выходим</span>
+            <span class="summary-label">Наше свидание</span>
           </div>
           <div class="summary-main">
-            <span id="summaryIcon" class="summary-icon">🎡</span>
+            <span id="summaryIcon" class="summary-icon">🎬</span>
             <div class="summary-info">
-              <h3 id="summaryActivity" class="summary-title">Парк и сладкая вата</h3>
-              <p id="summaryDatetime" class="summary-time">чт, 10 сентября · 20:00</p>
-              <p id="summarySubtitle" class="summary-sub">как маленькие</p>
+              <h3 id="summaryActivity" class="summary-title">Кино</h3>
+              <p id="summaryDatetime" class="summary-time">скоро · вечером</p>
+              <p id="summarySubtitle" class="summary-sub">наш вечер</p>
             </div>
           </div>
         </div>
@@ -246,8 +285,8 @@
   </main>
 
   <!-- Скрипты с cache-buster для гарантированного обновления в Telegram -->
-  <script src="config.js?v=3"></script>
-  <script src="mosaic.js?v=3"></script>
-  <script src="script.js?v=3"></script>
+  <script src="config.js?v=5"></script>
+  <script src="mosaic.js?v=5"></script>
+  <script src="script.js?v=5"></script>
 </body>
 </html>

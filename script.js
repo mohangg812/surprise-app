@@ -1,6 +1,7 @@
 /**
  * ============================================================================
  * ROMANTIC SURPRISE APP (CELAMUR STYLE) - CORE SCRIPT
+ * Версия с КВИЗОМ (quiz) вместо выбора свидания
  * ============================================================================
  */
 
@@ -14,30 +15,35 @@
     selectedTime: null,
     isMusicPlaying: false,
     audioCtx: null,
-    musicInterval: null
+    musicInterval: null,
+    // Квиз
+    quizStep: 0,
+    quizGifts: []
   };
 
   const config = window.APP_CONFIG || {
-    recipientName: "Даша",
-    senderName: "Никита",
+    recipientName: "Ульяша",
+    senderName: "Твой любимый",
     secretQuestion: "где мы познакомились?",
-    secretAnswers: ["кафе"],
-    secretErrorHint: "Неправильный ответ... Вспомни получше! 😉",
-    envelopeBadge: "Даша",
-    letterHeader: "это тебе, Даша",
-    letterGreeting: "Даша, с днём рождения!",
+    secretAnswers: ["на дискотеке"],
+    secretErrorHint: "Неправильно... Подсказка: вспомни музыку 🎶😉",
+    envelopeBadge: "Ульяша",
+    letterHeader: "это тебе, Ульяша",
+    letterGreeting: "Ульяша, с полугодием! 💕",
     letterBody: ["Люблю тебя."],
-    letterSign: "твой Никита",
-    polaroidPhoto: "assets/polaroid_placeholder.png",
-    polaroidCaption: "мими!",
+    letterSign: "твой любимый ❤️",
+    polaroidPhoto: "assets/polaroid.jpg",
+    polaroidCaption: "мы 🤍",
+    quizMode: true,
+    quiz: [],
     activities: [],
     dates: [],
     times: [],
-    portraitPhoto: "assets/portrait_placeholder.png",
-    mosaicWord: "ДАША",
-    mosaicTargetCount: 1450,
-    mosaicSubtext: "по {count} раз думаю о тебе каждый день {name})",
-    telegramUsername: ""
+    portraitPhoto: "assets/portrait.jpg",
+    mosaicWord: "УЛЬЯША",
+    mosaicTargetCount: 175,
+    mosaicSubtext: "каждый день мои мысли о тебе, любимость 💕",
+    telegramUsername: "gahrfb"
   };
 
   // --- Инициализация Telegram WebApp SDK ---
@@ -229,6 +235,10 @@
     const qText = document.getElementById('questionText');
     if (qText && config.secretQuestion) qText.textContent = config.secretQuestion;
 
+    // Подсказка
+    const hintText = document.getElementById('hintText');
+    if (hintText && config.secretHint) hintText.textContent = config.secretHint;
+
     // 2. Конверт
     const envHead = document.getElementById('envelopeHeading');
     if (envHead) envHead.textContent = `${config.recipientName}, тебе письмо`;
@@ -254,20 +264,26 @@
     const letSign = document.getElementById('letterSign');
     if (letSign && config.letterSign) letSign.textContent = config.letterSign;
 
-    // 4. Варианты свиданий
-    const actList = document.getElementById('activitiesList');
-    if (actList && Array.isArray(config.activities)) {
-      actList.innerHTML = config.activities.map((act, idx) => `
-        <div class="activity-card ${idx === 0 ? 'selected' : ''}" data-id="${act.id}" data-index="${idx}">
-          <span class="activity-icon">${act.icon || '✨'}</span>
-          <div class="activity-info">
-            <span class="activity-title">${act.title}</span>
-            <span class="activity-subtitle">${act.subtitle}</span>
+    // 4. Квиз / Активности
+    if (config.quizMode && config.quiz && config.quiz.length > 0) {
+      // Инициализируем квиз
+      initQuiz();
+    } else {
+      // Fallback: старый формат с карточками
+      const actList = document.getElementById('activitiesList');
+      if (actList && Array.isArray(config.activities)) {
+        actList.innerHTML = config.activities.map((act, idx) => `
+          <div class="activity-card ${idx === 0 ? 'selected' : ''}" data-id="${act.id}" data-index="${idx}">
+            <span class="activity-icon">${act.icon || '✨'}</span>
+            <div class="activity-info">
+              <span class="activity-title">${act.title}</span>
+              <span class="activity-subtitle">${act.subtitle}</span>
+            </div>
           </div>
-        </div>
-      `).join('');
-      if (config.activities.length > 0) {
-        state.selectedActivity = config.activities[0];
+        `).join('');
+        if (config.activities.length > 0) {
+          state.selectedActivity = config.activities[0];
+        }
       }
     }
 
@@ -299,10 +315,151 @@
     }
 
     // 7. Финал: текст под портретом
-    const capCount = document.getElementById('mosaicCaptionCount');
-    if (capCount) capCount.textContent = config.mosaicTargetCount || 1450;
-    const capName = document.getElementById('mosaicCaptionName');
-    if (capName) capName.textContent = config.recipientName;
+    const footerText = document.getElementById('mosaicFooterText');
+    if (footerText && config.mosaicSubtext) {
+      footerText.textContent = config.mosaicSubtext;
+    }
+  }
+
+  // ============================================================
+  //  КВИЗ — последовательные вопросы с подарками
+  // ============================================================
+  function initQuiz() {
+    state.quizStep = 0;
+    state.quizGifts = [];
+    showQuizStep(0);
+  }
+
+  function showQuizStep(step) {
+    const quiz = config.quiz;
+    const container = document.getElementById('quizContainer');
+    const giftCard = document.getElementById('quizGiftCard');
+    const bonus = document.getElementById('quizBonus');
+    const progressFill = document.getElementById('quizProgressFill');
+    const progressText = document.getElementById('quizProgressText');
+
+    if (!quiz || step >= quiz.length) {
+      // Все вопросы пройдены — показываем бонус
+      if (container) container.classList.add('hidden');
+      if (giftCard) giftCard.classList.add('hidden');
+      if (bonus) {
+        bonus.classList.remove('hidden');
+
+        // Заполняем бонус
+        const bonusTitle = document.getElementById('quizBonusTitle');
+        const bonusSub = document.getElementById('quizBonusSubtitle');
+        if (config.quizBonus) {
+          if (bonusTitle) bonusTitle.textContent = config.quizBonus.title;
+          if (bonusSub) bonusSub.textContent = config.quizBonus.subtitle;
+        }
+
+        // Показываем список подарков
+        const giftsSummary = document.getElementById('quizGiftsSummary');
+        if (giftsSummary) {
+          giftsSummary.innerHTML = '<h4 class="gifts-summary-title">Твои подарки:</h4>' +
+            state.quizGifts.map(g => `
+              <div class="gift-summary-item">
+                <span class="gift-summary-icon">${g.icon}</span>
+                <span class="gift-summary-text">${g.text}</span>
+              </div>
+            `).join('');
+        }
+      }
+
+      if (progressFill) progressFill.style.width = '100%';
+      if (progressText) progressText.textContent = `${quiz.length} / ${quiz.length}`;
+
+      // Устанавливаем "кино" как выбранную активность
+      state.selectedActivity = config.activities[0] || { title: "Кино", subtitle: "наш вечер", icon: "🎬" };
+
+      spawnHearts(25);
+      triggerHaptic('success');
+      return;
+    }
+
+    // Показать текущий вопрос
+    if (container) container.classList.remove('hidden');
+    if (giftCard) giftCard.classList.add('hidden');
+    if (bonus) bonus.classList.add('hidden');
+
+    const q = quiz[step];
+    const questionEl = document.getElementById('quizQuestion');
+    const answerInput = document.getElementById('quizAnswerInput');
+    const errorEl = document.getElementById('quizError');
+
+    if (questionEl) questionEl.textContent = q.question;
+    if (answerInput) {
+      answerInput.value = '';
+      answerInput.focus();
+    }
+    if (errorEl) errorEl.classList.add('hidden');
+
+    // Обновить прогресс
+    if (progressFill) progressFill.style.width = `${(step / quiz.length) * 100}%`;
+    if (progressText) progressText.textContent = `${step} / ${quiz.length}`;
+  }
+
+  function checkQuizAnswer() {
+    const quiz = config.quiz;
+    if (!quiz || state.quizStep >= quiz.length) return;
+
+    const q = quiz[state.quizStep];
+    const answerInput = document.getElementById('quizAnswerInput');
+    const errorEl = document.getElementById('quizError');
+    const val = (answerInput?.value || '').trim().toLowerCase();
+
+    const validAnswers = (q.answers || []).map(a => a.toLowerCase().trim());
+    const isMatch = validAnswers.some(ans => {
+      return val === ans || val.includes(ans) || ans.includes(val);
+    });
+
+    if (isMatch && val.length > 0) {
+      // Верный ответ!
+      triggerHaptic('success');
+      if (errorEl) errorEl.classList.add('hidden');
+
+      // Сохраняем подарок
+      state.quizGifts.push({
+        icon: q.giftIcon || '🎁',
+        text: q.gift || 'Сюрприз!'
+      });
+
+      // Показываем карточку подарка
+      showGiftCard(q);
+      playTone(523.25, 0.8);
+      spawnHearts(15);
+    } else {
+      // Неверный ответ
+      triggerHaptic('error');
+      if (errorEl) errorEl.classList.remove('hidden');
+      if (answerInput) {
+        answerInput.classList.add('shake');
+        setTimeout(() => answerInput.classList.remove('shake'), 450);
+      }
+    }
+  }
+
+  function showGiftCard(q) {
+    const container = document.getElementById('quizContainer');
+    const giftCard = document.getElementById('quizGiftCard');
+    const giftIcon = document.getElementById('quizGiftIcon');
+    const giftText = document.getElementById('quizGiftText');
+
+    if (container) container.classList.add('hidden');
+    if (giftCard) {
+      giftCard.classList.remove('hidden');
+      // Анимация появления
+      giftCard.style.animation = 'none';
+      giftCard.offsetHeight; // reflow
+      giftCard.style.animation = 'giftReveal 0.6s ease-out';
+    }
+    if (giftIcon) giftIcon.textContent = q.giftIcon || '🎁';
+    if (giftText) giftText.textContent = q.gift || 'Сюрприз!';
+  }
+
+  function nextQuizStep() {
+    state.quizStep++;
+    showQuizStep(state.quizStep);
   }
 
   // --- Привязка событий интерактивных элементов ---
@@ -323,6 +480,14 @@
     const ansInput = document.getElementById('answerInput');
     const submitBtn = document.getElementById('submitAnswerBtn');
     const errHint = document.getElementById('errorHint');
+
+    // Кнопка подсказки
+    const hintBtn = document.getElementById('hintBtn');
+    const hintText = document.getElementById('hintText');
+    hintBtn?.addEventListener('click', () => {
+      hintText?.classList.toggle('hidden');
+      triggerHaptic('light');
+    });
 
     function checkAnswer() {
       initAudio();
@@ -349,7 +514,10 @@
       } else {
         // Ошибка
         triggerHaptic('error');
-        errHint?.classList.remove('hidden');
+        if (errHint) {
+          errHint.classList.remove('hidden');
+          errHint.textContent = config.secretErrorHint || "Неправильный ответ... Вспомни получше! 😉";
+        }
         ansInput.classList.add('shake');
         setTimeout(() => ansInput.classList.remove('shake'), 450);
       }
@@ -403,7 +571,35 @@
       forgotBtn.style.pointerEvents = 'none';
     });
 
-    // --- Экран 4: Выбор варианта свидания ---
+    // --- Экран 4: КВИЗ ---
+    const quizCheckBtn = document.getElementById('quizCheckBtn');
+    const quizAnswerInput = document.getElementById('quizAnswerInput');
+    const quizNextBtn = document.getElementById('quizNextBtn');
+    const quizDoneBtn = document.getElementById('quizDoneBtn');
+
+    quizCheckBtn?.addEventListener('click', () => {
+      checkQuizAnswer();
+    });
+
+    // Enter в поле ввода квиза
+    quizAnswerInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        checkQuizAnswer();
+      }
+    });
+
+    quizNextBtn?.addEventListener('click', () => {
+      triggerHaptic('medium');
+      nextQuizStep();
+    });
+
+    quizDoneBtn?.addEventListener('click', () => {
+      triggerHaptic('medium');
+      showScreen('screen-date');
+    });
+
+    // Fallback: старый выбор (на случай если quizMode выключен)
     const actList = document.getElementById('activitiesList');
     const actNextBtn = document.getElementById('activityNextBtn');
 
@@ -485,14 +681,22 @@
     const sentFeedback = document.getElementById('sentFeedback');
 
     function buildResultText() {
-      const act = state.selectedActivity || { title: "Свидание", subtitle: "" };
-      const dt = state.selectedDate ? `${state.selectedDate.weekday}, ${state.selectedDate.day}` : "скоро";
-      const tm = state.selectedTime || "вечером";
+      const act = state.selectedActivity || { title: "Кино", subtitle: "наш вечер" };
+      const dt = state.selectedDate 
+        ? `${state.selectedDate.day}${state.selectedDate.weekday ? ' (' + state.selectedDate.weekday + ')' : ''}` 
+        : "в эти выходные";
+      const tm = state.selectedTime || "19:30";
+
+      let giftsText = '';
+      if (state.quizGifts.length > 0) {
+        giftsText = '\n\n🎁 Подарки, которые я отгадала:\n' + state.quizGifts.map(g => `${g.icon} ${g.text}`).join('\n');
+      }
 
       return `❤️ Мой выбор для нашего свидания:\n` +
-             `✨ Занятие: ${act.title} (${act.subtitle})\n` +
-             `📅 Дата и время: ${dt} · ${tm}\n\n` +
-             `Жду встречи с нетерпением! 🥰`;
+             `🎬 ${act.title} (${act.subtitle})\n` +
+             `📅 ${dt} · ${tm}` +
+             giftsText +
+             `\n\nЖду нашей встречи! 🥰`;
     }
 
     sendTgBtn?.addEventListener('click', () => {
@@ -506,6 +710,7 @@
             activity: state.selectedActivity,
             date: state.selectedDate,
             time: state.selectedTime,
+            gifts: state.quizGifts,
             text: text
           };
           tg.sendData(JSON.stringify(payload));
@@ -543,12 +748,12 @@
   // --- Запуск генерации портрета из слов (Экран 7) ---
   function startMosaicBuild() {
     // 1. Заполняем итоговую карточку
-    const act = state.selectedActivity || config.activities[0] || { title: "Парк и сладкая вата", subtitle: "как маленькие", icon: "🎡" };
-    const dt = state.selectedDate ? `${state.selectedDate.weekday}, ${state.selectedDate.day}` : "чт, 10 сентября";
-    const tm = state.selectedTime || "20:00";
+    const act = state.selectedActivity || config.activities[0] || { title: "Кино", subtitle: "наш вечер", icon: "🎬" };
+    const dt = state.selectedDate ? `${state.selectedDate.day}${state.selectedDate.weekday ? ' (' + state.selectedDate.weekday + ')' : ''}` : "в эти выходные";
+    const tm = state.selectedTime || "19:30";
 
     const sumIcon = document.getElementById('summaryIcon');
-    if (sumIcon) sumIcon.textContent = act.icon || '🤍';
+    if (sumIcon) sumIcon.textContent = act.icon || '🎬';
 
     const sumAct = document.getElementById('summaryActivity');
     if (sumAct) sumAct.textContent = act.title;
@@ -557,7 +762,7 @@
     if (sumDt) sumDt.textContent = `${dt} · ${tm}`;
 
     const sumSub = document.getElementById('summarySubtitle');
-    if (sumSub) sumSub.textContent = act.subtitle;
+    if (sumSub) sumSub.textContent = act.subtitle || '';
 
     // 2. Запускаем Canvas Mosaic
     const canvas = document.getElementById('mosaicCanvas');
@@ -568,10 +773,10 @@
         canvas: canvas,
         imageSrc: config.portraitPhoto,
         word: config.mosaicWord || config.recipientName.toUpperCase(),
-        targetCount: config.mosaicTargetCount || 1450,
+        targetCount: config.mosaicTargetCount || 175,
         onProgress: (current) => {
           if (counterEl) counterEl.textContent = current;
-          if (current > 0 && current % 140 === 0) triggerHaptic('selection');
+          if (current > 0 && current % 25 === 0) triggerHaptic('selection');
         },
         onComplete: () => {
           triggerHaptic('success');
