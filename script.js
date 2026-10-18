@@ -319,6 +319,17 @@
     if (footerText && config.mosaicSubtext) {
       footerText.textContent = config.mosaicSubtext;
     }
+
+    // 8. Кнопки с юзернеймом заказчика
+    const tgUsername = (config.telegramUsername || 'gahrfb').replace('@', '').trim();
+    const sendTgBtnEl = document.getElementById('sendTgBtn');
+    if (sendTgBtnEl) {
+      sendTgBtnEl.innerHTML = `<span class="btn-tg-icon">✈️</span><span>Отправить ответ @${tgUsername}</span>`;
+    }
+    const openDirectBtnEl = document.getElementById('openDirectBtn');
+    if (openDirectBtnEl) {
+      openDirectBtnEl.innerHTML = `<span class="btn-tg-icon">💬</span><span>Открыть диалог с @${tgUsername}</span>`;
+    }
   }
 
   // ============================================================
@@ -701,6 +712,7 @@
 
     // --- Экран 7: Отправка и копирование результатов ---
     const sendTgBtn = document.getElementById('sendTgBtn');
+    const openDirectBtn = document.getElementById('openDirectBtn');
     const copyBtn = document.getElementById('copySummaryBtn');
     const sentFeedback = document.getElementById('sentFeedback');
 
@@ -711,10 +723,15 @@
         : "в эти выходные";
       const tm = state.selectedTime || "19:30";
 
-      let giftsText = '';
-      if (state.quizGifts.length > 0) {
-        giftsText = '\n\n🎁 Подарки, которые я отгадала:\n' + state.quizGifts.map(g => `${g.icon} ${g.text}`).join('\n');
-      }
+      const gifts = (state.quizGifts && state.quizGifts.length > 0)
+        ? state.quizGifts
+        : [
+            { icon: "🧸", text: "Плюшевый мишка;)" },
+            { icon: "🎂", text: "Бенто тортик" },
+            { icon: "🌹", text: "Лего Розы" }
+          ];
+
+      const giftsText = '\n\n🎁 Подарки, которые я отгадала:\n' + gifts.map(g => `${g.icon} ${g.text}`).join('\n');
 
       return `❤️ Мой выбор для нашего свидания:\n` +
              `🎬 ${act.title} (${act.subtitle})\n` +
@@ -723,11 +740,57 @@
              `\n\nЖду нашей встречи! 🥰`;
     }
 
+    function copyToClipboard(text) {
+      if (!text) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(() => {});
+      }
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        ta.style.top = '0';
+        ta.setAttribute('readonly', '');
+        document.body.appendChild(ta);
+        ta.select();
+        ta.setSelectionRange(0, 99999);
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      } catch (err) {
+        console.warn("Fallback copy error:", err);
+      }
+    }
+
+    function openTelegramUrl(url) {
+      const tgApp = window.Telegram?.WebApp;
+      if (tgApp?.openTelegramLink) {
+        try {
+          tgApp.openTelegramLink(url);
+          return;
+        } catch (e) {
+          console.warn("openTelegramLink error:", e);
+        }
+      }
+      try {
+        const win = window.open(url, '_blank');
+        if (!win || win.closed || typeof win.closed === 'undefined') {
+          window.location.href = url;
+        }
+      } catch (e) {
+        window.location.href = url;
+      }
+    }
+
+    // 1. Основная кнопка: Отправить ответ в Telegram (через Share с готовым текстом)
     sendTgBtn?.addEventListener('click', () => {
       triggerHaptic('success');
       const text = buildResultText();
 
-      // 1. Попытка отправить через нативный Telegram WebApp API
+      // Гарантированно копируем текст в буфер обмена
+      copyToClipboard(text);
+
+      // Если Mini App запущен ботом — отправляем WebApp Data
       if (tg) {
         try {
           const payload = {
@@ -743,29 +806,76 @@
         }
       }
 
-      // 2. Открываем прямой диалог с заказчиком в Telegram
-      const username = (config.telegramUsername || 'gahrfb').replace('@', '').trim();
-      const directUrl = `https://t.me/${username}?text=${encodeURIComponent(text)}`;
+      // Открываем нативный Telegram Share (текст уже предварительно заполнен)
+      const shareUrl = `https://t.me/share/url?text=${encodeURIComponent(text)}`;
+      openTelegramUrl(shareUrl);
 
-      if (tg?.openTelegramLink) {
-        tg.openTelegramLink(directUrl);
-      } else {
-        window.open(directUrl, '_blank');
+      // Показываем четкую подсказку пользователю
+      const username = (config.telegramUsername || 'gahrfb').replace('@', '').trim();
+      if (sentFeedback) {
+        sentFeedback.innerHTML = `
+          <div class="feedback-badge">✨ Текст скопирован в буфер!</div>
+          <div class="feedback-title">Открываем Telegram...</div>
+          <p class="feedback-desc">
+            Выбери диалог с <b>@${username}</b> — готовый текст уже вставлен в поле ввода, просто нажми <b>«Отправить»</b> ❤️<br>
+            <span class="feedback-sub">Либо открой диалог напрямую кнопкой ниже и вставь скопированный текст.</span>
+          </p>
+        `;
+        sentFeedback.classList.remove('hidden');
       }
 
-      sentFeedback?.classList.remove('hidden');
       spawnHearts(25);
     });
 
+    // 2. Вторая кнопка: Открыть диалог с @gahrfb напрямую
+    openDirectBtn?.addEventListener('click', () => {
+      triggerHaptic('success');
+      const text = buildResultText();
+
+      // Копируем в буфер
+      copyToClipboard(text);
+
+      // Открываем прямой чат с пользователем
+      const username = (config.telegramUsername || 'gahrfb').replace('@', '').trim();
+      const directUrl = `https://t.me/${username}`;
+      openTelegramUrl(directUrl);
+
+      // Инструкция пользователю
+      if (sentFeedback) {
+        sentFeedback.innerHTML = `
+          <div class="feedback-badge">💌 Текст скопирован!</div>
+          <div class="feedback-title">Диалог с @${username} открывается...</div>
+          <p class="feedback-desc">
+            Текст твоего выбора уже в буфере. Просто нажми <b>«Вставить»</b> в чате и отправь 🥰
+          </p>
+        `;
+        sentFeedback.classList.remove('hidden');
+      }
+
+      spawnHearts(20);
+    });
+
+    // 3. Третья кнопка: Скопировать текст ответа
     copyBtn?.addEventListener('click', () => {
       triggerHaptic('light');
       const text = buildResultText();
-      navigator.clipboard?.writeText(text).then(() => {
-        copyBtn.textContent = "Скопировано в буфер! ✨";
-        setTimeout(() => {
-          copyBtn.textContent = "Скопировать результат";
-        }, 2500);
-      });
+      copyToClipboard(text);
+
+      const username = (config.telegramUsername || 'gahrfb').replace('@', '').trim();
+      copyBtn.innerHTML = `<span>Скопировано в буфер! ✨</span>`;
+      setTimeout(() => {
+        copyBtn.innerHTML = `<span>📋 Скопировать текст ответа</span>`;
+      }, 2500);
+
+      if (sentFeedback) {
+        sentFeedback.innerHTML = `
+          <div class="feedback-badge">📋 Скопировано!</div>
+          <p class="feedback-desc">
+            Текст твоего выбора в буфере обмена. Ты можешь вставить и отправить его <b>@${username}</b> в Telegram ❤️
+          </p>
+        `;
+        sentFeedback.classList.remove('hidden');
+      }
     });
   }
 
@@ -787,6 +897,23 @@
 
     const sumSub = document.getElementById('summarySubtitle');
     if (sumSub) sumSub.textContent = act.subtitle || '';
+
+    // Отображаем список отгаданных подарков в итоговой карточке
+    const sumGifts = document.getElementById('summaryGiftsList');
+    if (sumGifts) {
+      const gifts = (state.quizGifts && state.quizGifts.length > 0)
+        ? state.quizGifts
+        : [
+            { icon: "🧸", text: "Плюшевый мишка;)" },
+            { icon: "🎂", text: "Бенто тортик" },
+            { icon: "🌹", text: "Лего Розы" }
+          ];
+      sumGifts.innerHTML = `
+        <span class="gifts-label">🎁 Твои подарки:</span>
+        ${gifts.map(g => `<span class="gift-pill">${g.icon} ${g.text}</span>`).join(' ')}
+      `;
+      sumGifts.classList.remove('hidden');
+    }
 
     // 2. Запускаем Canvas Mosaic
     const canvas = document.getElementById('mosaicCanvas');
