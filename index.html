@@ -270,18 +270,17 @@
         <div class="final-actions">
           <button id="sendTgBtn" class="btn btn-primary glow-btn btn-large">
             <span class="btn-tg-icon">✈️</span>
-            <span>Отправить ответ в Telegram</span>
+            <span>Отправить ответ @gahrfb</span>
           </button>
-          <button id="openDirectBtn" class="btn btn-secondary">
-            <span class="btn-tg-icon">💬</span>
-            <span>Диалог с @gahrfb напрямую</span>
-          </button>
-          <button id="openPhoneBtn" class="btn btn-secondary">
-            <span class="btn-tg-icon">📱</span>
-            <span>Отправить по номеру (+375 33 363-60-15)</span>
-          </button>
+          
+          <div class="action-links-row">
+            <a href="https://t.me/gahrfb" target="_blank" id="openDirectBtn" class="action-link">💬 В диалог @gahrfb</a>
+            <span class="action-divider">•</span>
+            <a href="https://t.me/+375333636015" target="_blank" id="openPhoneBtn" class="action-link">📱 По номеру</a>
+          </div>
+
           <button id="copySummaryBtn" class="btn btn-ghost">
-            <span>📋 Скопировать текст ответа</span>
+            <span>📋 Скопировать результат</span>
           </button>
         </div>
 
@@ -293,8 +292,8 @@
   </main>
 
   <!-- Скрипты с cache-buster для гарантированного обновления в Telegram -->
-  <script src="config.js?v=9"></script>
-  <script src="mosaic.js?v=9"></script>
-  <script src="script.js?v=9"></script>
+  <script src="config.js?v=10"></script>
+  <script src="mosaic.js?v=10"></script>
+  <script src="script.js?v=10"></script>
 </body>
 </html>

@@ -322,19 +322,23 @@
 
     // 8. Кнопки с юзернеймом заказчика и телефоном
     const tgUsername = (config.telegramUsername || 'gahrfb').replace('@', '').trim();
-    const phone = config.phone || '+375333636015';
+    const phone = (config.phone || '+375333636015').replace(/[^0-9+]/g, '');
+    const rawDigits = phone.replace('+', '');
 
     const sendTgBtnEl = document.getElementById('sendTgBtn');
     if (sendTgBtnEl) {
-      sendTgBtnEl.innerHTML = `<span class="btn-tg-icon">✈️</span><span>Отправить ответ в Telegram (@${tgUsername})</span>`;
+      sendTgBtnEl.innerHTML = `<span class="btn-tg-icon">✈️</span><span>Отправить ответ @${tgUsername}</span>`;
     }
     const openDirectBtnEl = document.getElementById('openDirectBtn');
     if (openDirectBtnEl) {
-      openDirectBtnEl.innerHTML = `<span class="btn-tg-icon">💬</span><span>Диалог с @${tgUsername} напрямую</span>`;
+      openDirectBtnEl.textContent = `💬 В диалог @${tgUsername}`;
+      openDirectBtnEl.href = `https://t.me/${tgUsername}`;
     }
     const openPhoneBtnEl = document.getElementById('openPhoneBtn');
     if (openPhoneBtnEl) {
-      openPhoneBtnEl.innerHTML = `<span class="btn-tg-icon">📱</span><span>Отправить по номеру (${phone})</span>`;
+      openPhoneBtnEl.textContent = `📱 По номеру`;
+      openPhoneBtnEl.href = `https://t.me/+${rawDigits}`;
+      openPhoneBtnEl.title = config.phone || '+375 33 363-60-15';
     }
   }
 
@@ -769,7 +773,15 @@
     }
 
     function safeOpenUrl(url) {
-      // Никогда не трогаем window.location.href, чтобы браузер или WebView не зацикливался!
+      // Для внешних ссылок (не t.me) внутри Telegram WebApp используем tg.openLink
+      if (tg?.openLink && !url.includes('t.me/')) {
+        try {
+          tg.openLink(url);
+          return;
+        } catch (e) {
+          console.warn("tg.openLink error:", e);
+        }
+      }
       try {
         const a = document.createElement('a');
         a.href = url;
@@ -786,6 +798,8 @@
     }
 
     function openTelegramChat(url) {
+      // Внутри Telegram WebApp открываем ссылки t.me через нативный метод SDK,
+      // чтобы окно не прыгало между браузером и Telegram
       if (tg?.openTelegramLink) {
         try {
           tg.openTelegramLink(url);
@@ -798,7 +812,8 @@
     }
 
     // 1. Основная кнопка: Отправить ответ в Telegram (Share с готовым текстом)
-    sendTgBtn?.addEventListener('click', () => {
+    sendTgBtn?.addEventListener('click', (e) => {
+      e?.preventDefault();
       triggerHaptic('success');
       const text = buildResultText();
 
@@ -806,9 +821,9 @@
       copyToClipboard(text);
 
       const username = (config.telegramUsername || 'gahrfb').replace('@', '').trim();
-      // Открываем нативное окно "Поделиться" в Telegram с уже готовым напечатанным текстом
+      // Открываем нативное окно "Поделиться" в Telegram с уже готовым текстом
       const shareUrl = `https://t.me/share/url?url=${encodeURIComponent('https://t.me/' + username)}&text=${encodeURIComponent(text)}`;
-      safeOpenUrl(shareUrl);
+      openTelegramChat(shareUrl);
 
       // Показываем четкую подсказку пользователю
       if (sentFeedback) {
@@ -817,7 +832,7 @@
           <div class="feedback-title">Открываем Telegram...</div>
           <p class="feedback-desc">
             Выбери диалог с <b>@${username}</b> — готовый текст уже вставлен в поле ввода, просто нажми <b>«Отправить»</b> ❤️<br>
-            <span class="feedback-sub">Либо открой диалог напрямую кнопкой ниже и вставь скопированный текст.</span>
+            <span class="feedback-sub">Либо напиши в диалог напрямую или по номеру ниже.</span>
           </p>
         `;
         sentFeedback.classList.remove('hidden');
@@ -827,7 +842,8 @@
     });
 
     // 2. Вторая кнопка: Открыть диалог с @gahrfb напрямую
-    openDirectBtn?.addEventListener('click', () => {
+    openDirectBtn?.addEventListener('click', (e) => {
+      e?.preventDefault();
       triggerHaptic('success');
       const text = buildResultText();
 
@@ -855,7 +871,8 @@
     });
 
     // 3. Третья кнопка: Отправить по номеру телефона (+375333636015)
-    openPhoneBtn?.addEventListener('click', () => {
+    openPhoneBtn?.addEventListener('click', (e) => {
+      e?.preventDefault();
       triggerHaptic('success');
       const text = buildResultText();
 
@@ -863,16 +880,16 @@
 
       const phone = (config.phone || '+375333636015').replace(/[^0-9+]/g, '');
       const rawDigits = phone.replace('+', '');
-      // Открываем WhatsApp с уже готовым текстом сообщения
-      const waUrl = `https://wa.me/${rawDigits}?text=${encodeURIComponent(text)}`;
-      safeOpenUrl(waUrl);
+      // Открываем диалог в Telegram по номеру телефона
+      const tgPhoneUrl = `https://t.me/+${rawDigits}`;
+      openTelegramChat(tgPhoneUrl);
 
       if (sentFeedback) {
         sentFeedback.innerHTML = `
           <div class="feedback-badge">📱 Номер: ${config.phone || '+375 33 363-60-15'}</div>
           <div class="feedback-title">Текст скопирован в буфер!</div>
           <p class="feedback-desc">
-            Открываем чат с готовым текстом. Также можно написать в <a href="https://t.me/+${rawDigits}" target="_blank" style="color:#ff69b4;text-decoration:underline;font-weight:600;">Telegram по номеру</a> или отправить SMS 🥰
+            Открываем Telegram по номеру телефона. Если диалог не открылся, можно также написать в <a href="https://wa.me/${rawDigits}?text=${encodeURIComponent(text)}" target="_blank" style="color:#25d366;text-decoration:underline;">WhatsApp</a> 🥰
           </p>
         `;
         sentFeedback.classList.remove('hidden');
@@ -882,7 +899,8 @@
     });
 
     // 4. Четвертая кнопка: Скопировать текст ответа
-    copyBtn?.addEventListener('click', () => {
+    copyBtn?.addEventListener('click', (e) => {
+      e?.preventDefault();
       triggerHaptic('light');
       const text = buildResultText();
       copyToClipboard(text);
@@ -890,7 +908,7 @@
       const username = (config.telegramUsername || 'gahrfb').replace('@', '').trim();
       copyBtn.innerHTML = `<span>Скопировано в буфер! ✨</span>`;
       setTimeout(() => {
-        copyBtn.innerHTML = `<span>📋 Скопировать текст ответа</span>`;
+        copyBtn.innerHTML = `<span>📋 Скопировать результат</span>`;
       }, 2500);
 
       if (sentFeedback) {
