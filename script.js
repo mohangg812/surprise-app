@@ -736,9 +736,8 @@
       const gifts = (state.quizGifts && state.quizGifts.length > 0)
         ? state.quizGifts
         : [
-            { icon: "🧸", text: "Плюшевый мишка;)" },
-            { icon: "🎂", text: "Бенто тортик" },
-            { icon: "🌹", text: "Лего Розы" }
+            { icon: "🧸", text: "Плюшевый мишка ;)" },
+            { icon: "🎁", text: "Свит-бокс (коробка со сладостями)" }
           ];
 
       const giftsText = '\n\n🎁 Подарки, которые я отгадала:\n' + gifts.map(g => `${g.icon} ${g.text}`).join('\n');
@@ -948,9 +947,8 @@
       const gifts = (state.quizGifts && state.quizGifts.length > 0)
         ? state.quizGifts
         : [
-            { icon: "🧸", text: "Плюшевый мишка;)" },
-            { icon: "🎂", text: "Бенто тортик" },
-            { icon: "🌹", text: "Лего Розы" }
+            { icon: "🧸", text: "Плюшевый мишка ;)" },
+            { icon: "🎁", text: "Свит-бокс (коробка со сладостями)" }
           ];
       sumGifts.innerHTML = `
         <span class="gifts-label">🎁 Твои подарки:</span>
